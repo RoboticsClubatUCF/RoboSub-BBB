@@ -74,7 +74,7 @@ public:
         spinner.stop();
     }
 
-    void PushDiagData(diagnostic_msgs::DiagnosticStatus & statusmsg, T200Thruster thruster, std::string thrusterName)
+    void PushDiagData(diagnostic_msgs::DiagnosticStatus & statusmsg, T200Thruster & thruster, std::string thrusterName)
     {
         diagnostic_msgs::KeyValue thrusterValue;
 
