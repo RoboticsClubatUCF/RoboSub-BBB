@@ -21,11 +21,15 @@ class ThrusterManager {
 
     T200Thruster thrusterr;
     T200Thruster thrusterl;
+    
+    float tFrontUp = 0.0f, tRearUp = 0.0f;
+    float tLeftForward = 0.0f, tRightForward = 0.0f;
+    float tTopStrafe = 0.0f, tBottomStrafe = 0.0f;
 
 public:
-    ThrusterManager() : thrusterl(2, 0x2D), thrusterr(2, 0x2E), spinner(1)
+    ThrusterManager() : thrusterl(1, 0x2D), thrusterr(1, 0x2E), spinner(1)
     {
-        command_subscriber = nh_.subscribe("/thrustercommands", 1000, &ThrusterManager::thrusterCb, this);
+        command_subscriber = nh_.subscribe("/thrusters/cmd_vel", 1000, &ThrusterManager::thrusterCb, this);
 
         diagnostics_output = nh_.advertise<diagnostic_msgs::DiagnosticStatus>("/diagnostics", 1000);
     }
@@ -61,6 +65,9 @@ public:
 
             PushDiagData(status, thrusterr, "Thruster R");
             PushDiagData(status, thrusterl, "Thruster L");
+            
+            thrusterr.setVelocityRatio(fabs(tLeftForward), tLeftForward >0.0f ? T200ThrusterDirections::Forward : T200ThrusterDirections::Reverse);
+            thrusterl.setVelocityRatio(fabs(tRightForward), tRightForward > 0.0f ? T200ThrusterDirections::Forward : T200ThrusterDirections::Reverse);
 
             rate.sleep();
         }
@@ -126,8 +133,6 @@ public:
         }
 
         //mix the twist message, limits for extra safety
-        float tFrontUp, tRearUp, tLeftForward, tRightForward, tTopStrafe, tBottomStrafe;
-
         tFrontUp = std::max(-1.0f, std::min(1.0f, linearZ + angularY));
         tRearUp = std::max(-1.0f, std::min(1.0f, linearZ  - angularY));
 
@@ -136,12 +141,6 @@ public:
 
         tTopStrafe = std::max(-1.0f, std::min(1.0f, linearY - angularX));
         tBottomStrafe = std::max(-1.0f, std::min(1.0f, linearY + angularX));
-
-        //command the thrusters to the desired velocity
-        thrusterr.setVelocityRatio(fabs(tLeftForward), tLeftForward >0.0f ? T200ThrusterDirections::Forward : T200ThrusterDirections::Reverse);
-        thrusterl.setVelocityRatio(fabs(tRightForward), tRightForward > 0.0f ? T200ThrusterDirections::Forward : T200ThrusterDirections::Reverse);
-        
-        //ROS_INFO("out: %f\n", tLeftForward);
     }
     float magnitude(float x, float y) //return the magnitude of a 2d vector
     {
@@ -151,7 +150,7 @@ public:
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "thrust_manager");
+    ros::init(argc, argv, "thruster_driver");
     ThrusterManager tc;
     tc.init();
 
