@@ -1,4 +1,5 @@
 #include "blue_robotics_t200/t200_thruster.h"
+#include "seabotix_thruster/seabotix_thruster.h"
 
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
@@ -50,15 +51,8 @@ public:
 
             thrusterr.updateStatus();
             thrusterl.updateStatus();
-
-            bool thrustersAlive = thrusterr.isAlive() && thrusterl.isAlive();
-            bool thrustersPowerOK = (THRUSTER_OVERVOLT > thrusterr.getVoltage() > THRUSTER_UNDERVOLT) &&
-                                    (THRUSTER_OVERVOLT > thrusterl.getVoltage() > THRUSTER_UNDERVOLT);
-            bool thrustersCurrentOK = (THRUSTER_OVERCURRENT > thrusterr.getCurrent()) &&
-                                     (THRUSTER_OVERCURRENT > thrusterl.getCurrent());
-            bool thrustersTemperatureOK = (THRUSTER_OVERTEMP > thrusterr.getTemperature()) &&
-                                         (THRUSTER_OVERTEMP > thrusterl.getTemperature());
-            if (thrustersAlive && thrustersPowerOK && thrustersCurrentOK && thrustersTemperatureOK)
+            
+            if (thrusterOk(thrusterr) && thrusterOk(thrusterl))
                 status.level = status.OK;
             else
                 status.level = status.ERROR;
@@ -66,18 +60,53 @@ public:
             PushDiagData(status, thrusterr, "Thruster R");
             PushDiagData(status, thrusterl, "Thruster L");
             
-            thrusterr.setVelocityRatio(fabs(tLeftForward), tLeftForward >0.0f ? T200ThrusterDirections::Forward : T200ThrusterDirections::Reverse);
-            thrusterl.setVelocityRatio(fabs(tRightForward), tRightForward > 0.0f ? T200ThrusterDirections::Forward : T200ThrusterDirections::Reverse);
+            thrusterr.setVelocityRatio(tLeftForward);
+            thrusterl.setVelocityRatio(tRightForward);
 
             rate.sleep();
         }
         spinner.stop();
     }
+    
+    bool thrusterOk (T200Thruster & thruster)
+    {
+        return thruster.isAlive() && THRUSTER_OVERVOLT > thruster.getVoltage() > THRUSTER_UNDERVOLT && THRUSTER_OVERCURRENT > thruster.getCurrent() && THRUSTER_OVERTEMP > thruster.getTemperature();
+    }
 
+    bool thrusterOk (SeabotixThruster & thruster)
+    {
+        return thruster.isAlive() && THRUSTER_OVERCURRENT > thruster.getCurrent() && THRUSTER_OVERTEMP > thruster.getTemperature();
+    }
+    
+    void PushDiagData(diagnostic_msgs::DiagnosticStatus & statusmsg, SeabotixThruster & thruster, std::string thrusterName)
+    {
+        diagnostic_msgs::KeyValue thrusterValue;
+        
+        thrusterValue.key = "Thruster Type";
+        thrusterValue.value = "Seabotix";
+        statusmsg.values.push_back(thrusterValue);
+
+        thrusterValue.key = thrusterName + " Alive";
+        thrusterValue.value = BoolToString(thruster.isAlive());
+        statusmsg.values.push_back(thrusterValue);
+
+        thrusterValue.key = thrusterName + " Current";
+        thrusterValue.value = std::to_string(thruster.getCurrent());
+        statusmsg.values.push_back(thrusterValue);
+
+        thrusterValue.key = thrusterName + " Temperature";
+        thrusterValue.value = std::to_string(thruster.getTemperature());
+        statusmsg.values.push_back(thrusterValue);
+    }
+    
     void PushDiagData(diagnostic_msgs::DiagnosticStatus & statusmsg, T200Thruster & thruster, std::string thrusterName)
     {
         diagnostic_msgs::KeyValue thrusterValue;
 
+        thrusterValue.key = "Thruster Type";
+        thrusterValue.value = "Blue Robotics T200";
+        statusmsg.values.push_back(thrusterValue);
+        
         thrusterValue.key = thrusterName + " Alive";
         thrusterValue.value = BoolToString(thruster.isAlive());
         statusmsg.values.push_back(thrusterValue);

@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   blue_robotics_t200
+  seabotix_thruster
 )
 
 catkin_package()

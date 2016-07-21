@@ -1,6 +1,8 @@
 #ifndef Seabotix_Thruster_H
 #include "i2c_interface.h"
 
+#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
+
 namespace SeabotixThrusterDirections
 {
     enum SeabotixThrusterDirection
@@ -24,6 +26,18 @@ namespace SeabotixThrusterStatusIndices
 } 
 typedef SeabotixThrusterStatusIndices::SeabotixThrusterStatusIndex SeabotixThrusterStatusIndex;
 
+namespace SeabotixThrusterFaultIndices
+{
+    enum SeabotixThrusterFaultIndex
+    {
+        Overtemp,
+        StalledMotor,
+        HallSensorError,
+        GroundFault,
+        WaterDetect
+    };
+} 
+typedef SeabotixThrusterFaultIndices::SeabotixThrusterFaultIndex SeabotixThrusterFaultIndex;
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Class providing functionality for using the Blue Robotics Blue ESC Seabotix
 /// 
@@ -107,6 +121,8 @@ double getCurrent();
 ////////////////////////////////////////////////////////////////////////////////
 bool isAlive();
 
+unsigned char getFaultStatus();
+
 private:
 
 static const int STATUS_DATA_BYTES = 6;
@@ -119,7 +135,7 @@ static const unsigned char GOOD_IDENTIFIER = 0xAB;
 ByteBuffer status_data_;
 I2C_Interface i2c_interface_;
 
-void setVelocity(int velocity_command);
+void setVelocity(double velocity_ratio);
 int getRawTemperatureMeasurement();
 int getRawCurrentMeasurement();
 unsigned char getIdentifier();

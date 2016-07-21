@@ -1,11 +1,8 @@
-#include <blue_robotics_t200/t200_thruster.h>
+#include <seabotix_thruster/seabotix_thruster.h>
 #include <cmath>
 #include <cstdio>
 
 #define LINEARIZE_OUTPUT
-
-constexpr double SeabotixThruster::CURRENT_SCALE_FACTOR;
-constexpr double SeabotixThruster::VOLTAGE_SCALE_FACTOR;
 
 SeabotixThruster::SeabotixThruster(int bus_number, unsigned char address) :
     i2c_interface_(bus_number, address)
@@ -64,7 +61,7 @@ double SeabotixThruster::linearizeOutput(double velocity_desired)
     double thruster_setting = 0.0;
 
     if(velocity_desired > 0.01)
-        thruster_setting = veloctiy_desired*0.788+0.101;
+        thruster_setting = velocity_desired*0.788+0.101;
     else if(velocity_desired < -0.01)
         thruster_setting = velocity_desired*0.9-0.112;
     else
@@ -93,7 +90,7 @@ double SeabotixThruster::getTemperature()
 
 double SeabotixThruster::getCurrent()
 {
-    return 0.1*(getRawCurrentMeasurement();
+    return 0.1*getRawCurrentMeasurement();
 }
 
 bool SeabotixThruster::isAlive()
@@ -101,14 +98,20 @@ bool SeabotixThruster::isAlive()
     return status_data_[SeabotixThrusterStatusIndices::Fault] == 0;
 }
 
+
+unsigned char SeabotixThruster::getFaultStatus() //Return thruster fault data
+{
+    return status_data_[SeabotixThrusterStatusIndices::Fault];
+}
+
 void SeabotixThruster::setVelocity(double velocity_ratio)
 {
-    unsigned char velocity_command = (velocity_ratio => 0 : ZERO_VELOCITY_VALUE ? ZERO_VELOCITY_VALUE - 1) + (char) velocity_ratio * 0x66;
+    unsigned char velocity_command = (velocity_ratio >= 0 ? ZERO_VELOCITY_VALUE : ZERO_VELOCITY_VALUE - 1) + (char) velocity_ratio * 0x66;
     
     ByteBuffer output_buffer;
     // Move velocity byte value into output buffer.  Note that the cast automatically
     //  removes more significant bits so we don't need to mask.
-    output_buffer.appendByte((unsigned char)(velocity_command)); //Speed
+    output_buffer.appendByte((unsigned char)velocity_command); //Speed
     output_buffer.appendByte((unsigned char)100); //unused "additional" info
     output_buffer.appendByte((unsigned char)(0x52 + 100 + velocity_command)); //Checksum
     
@@ -131,5 +134,5 @@ int SeabotixThruster::getRawCurrentMeasurement()
 
 unsigned char SeabotixThruster::getIdentifier()
 {
-    return status_data_[SeabotixThrusterStatusIndices::Identifier];
+    return status_data_[SeabotixThrusterStatusIndices::Fault];
 }
