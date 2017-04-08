@@ -1,11 +1,11 @@
-#include <seabotix_thruster/seabotix_thruster.h>
+#include <sub_thruster_library/seabotix_thruster.h>
 #include <cmath>
 #include <cstdio>
 
 #define LINEARIZE_OUTPUT
 
 SeabotixThruster::SeabotixThruster(int bus_number, unsigned char address) :
-    i2c_interface_(bus_number, address)
+    i2c_interface_(bus_number, address), GenericThruster()
 {
     for (int i = 0; i < STATUS_DATA_BYTES; i++)
     {
@@ -135,4 +135,14 @@ int SeabotixThruster::getRawCurrentMeasurement()
 unsigned char SeabotixThruster::getIdentifier()
 {
     return status_data_[SeabotixThrusterStatusIndices::Fault];
+}
+
+std::string SeabotixThruster::getType()
+{
+	return "Seabotix Brushed";
+}
+
+bool SeabotixThruster::inLimits()
+{
+	return true;
 }

@@ -20,7 +20,7 @@ typedef ThrusterPWMDirections::ThrusterPWMDirection ThrusterPWMDirection;
 /// to 1.0 in forward and reverse directions.
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class ThrusterPWM
+class ThrusterPWM : public GenericThruster
 {
 public:
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,28 +47,6 @@ ThrusterPWM(BlackLib::pwmName);
 /// \param direction         The direction of the thruster.
 ////////////////////////////////////////////////////////////////////////////////
 void setVelocityRatio(double  velocity_scale, ThrusterPWMDirection direction);
-
-////////////////////////////////////////////////////////////////////////////////
-/// \brief Function for setting the thruster's velocity.
-///
-/// Overload to set thruster direction and power as a ratio of maximum supported velocity
-///
-/// \param velocity_ratio    The ratio between -1.0 and 1.0 for thruster power.
-////////////////////////////////////////////////////////////////////////////////
-void setVelocityRatio(double  velocity_ratio);
-
-////////////////////////////////////////////////////////////////////////////////
-/// \brief linearizes thruster output and almost eliminates deadzone
-///
-/// Function that takes desired thrust output as a fraction from 1.0 to -1.0 and
-/// applies a linear function based on data from the manufacturer so that deadband is 
-/// reduced to a range from 0.01 to -0.01 and maximum output is the same in both 
-/// directions
-///
-/// \param velocity_desired desired thruster output
-////////////////////////////////////////////////////////////////////////////////
-double linearizeOutput(double velocity_desired);
-
 
 private:
 

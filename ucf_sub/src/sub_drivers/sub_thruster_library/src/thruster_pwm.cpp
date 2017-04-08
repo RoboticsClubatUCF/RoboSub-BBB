@@ -1,9 +1,9 @@
-#include <thruster_pwm/thruster_pwm.h>
+#include <sub_thruster_library/thruster_pwm.h>
 #include <cmath>
 #include <cstdio>
 
 ThrusterPWM::ThrusterPWM(BlackLib::pwmName pwm_pin):
-    pwm_interface_(pwm_pin)
+    pwm_interface_(pwm_pin), GenericThruster()
 {
     pwm_interface_.setPeriodTime(20, BlackLib::milliseconds);
     // Initialize thruster with 0 velocity command
@@ -74,4 +74,14 @@ double ThrusterPWM::linearizeOutput(double velocity_desired)
 void ThrusterPWM::setVelocity(double target_ratio)
 {
     pwm_interface_.setDutyPercent(7.5+target_ratio*0.02);
+}
+
+std::string ThrusterPWM::getType()
+{
+	return "PWM Thruster";
+}
+
+bool ThrusterPWM::inLimits()
+{
+	return true;
 }

@@ -1,4 +1,4 @@
-#include <blue_robotics_t200/t200_thruster.h>
+#include <sub_thruster_library/t200_thruster.h>
 #include <cmath>
 #include <cstdio>
 
@@ -8,7 +8,7 @@ constexpr double T200Thruster::CURRENT_SCALE_FACTOR;
 constexpr double T200Thruster::VOLTAGE_SCALE_FACTOR;
 
 T200Thruster::T200Thruster(int bus_number, unsigned char address) :
-    i2c_interface_(bus_number, address)
+    i2c_interface_(bus_number, address), GenericThruster()
 {
     for (int i = 0; i < STATUS_DATA_BYTES; i++)
     {
@@ -186,4 +186,14 @@ int T200Thruster::getRawCurrentMeasurement()
 unsigned char T200Thruster::getIdentifier()
 {
     return status_data_[T200ThrusterStatusIndices::Identifier];
+}
+
+std::string T200Thruster::getType()
+{
+	return "BlueRobotics T200";
+}
+
+std::string T200Thruster::inLimits()
+{
+	return true;
 }
