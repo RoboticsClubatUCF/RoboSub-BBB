@@ -32,7 +32,6 @@ void operator=(GenericThruster const &x) = delete;
 /// \param velocity_ratio    The ratio between -1.0 and 1.0 for thruster power.
 ////////////////////////////////////////////////////////////////////////////////
 virtual void setVelocityRatio(double  velocity_ratio) = 0;
-
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief linearizes thruster output and almost eliminates deadzone
 ///
@@ -44,7 +43,6 @@ virtual void setVelocityRatio(double  velocity_ratio) = 0;
 /// \param velocity_desired desired thruster output
 ////////////////////////////////////////////////////////////////////////////////
 virtual double linearizeOutput(double velocity_desired) = 0;
-
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Forces the thruster to update its most recent status data.
 ///
@@ -52,14 +50,6 @@ virtual double linearizeOutput(double velocity_desired) = 0;
 /// supported by some thrusters for use in status exposure functions.
 ////////////////////////////////////////////////////////////////////////////////
 virtual void updateStatus() = 0;
-
-////////////////////////////////////////////////////////////////////////////////
-/// \brief Get the number of commutation pulses since the last read.
-///
-/// For use in calculation of RPM according to Blue Robotics documentation.  
-/// Suggested use is rpm = pulse_count/dt*60/motor_pole_count
-////////////////////////////////////////////////////////////////////////////////
-virtual int getPulseCount() = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Get the current voltage supplied to the thruster.

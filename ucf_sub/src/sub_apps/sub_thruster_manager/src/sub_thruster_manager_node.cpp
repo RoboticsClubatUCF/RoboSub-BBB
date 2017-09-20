@@ -15,16 +15,18 @@ class ThrusterManager {
     ros::Publisher diagnostics_output;
 
     ros::AsyncSpinner spinner;
-
-    T200Thruster thrusterr;
-    T200Thruster thrusterl;
+    
+    std::map<int, GenericThruster> thrusterMap;
 
 public:
-    ThrusterManager() : thrusterl(1, 0x2D), thrusterr(1, 0x2E), spinner(1)
+    ThrusterManager() : spinner(1)
     {
         command_subscriber = nh_.subscribe("/thrusters/cmd_vel", 1000, &ThrusterManager::thrusterCb, this);
 
         diagnostics_output = nh_.advertise<diagnostic_msgs::DiagnosticStatus>("/diagnostics", 1000);
+    	
+    	thrusterMap[0] = T200Thruster(1, 0x2D);
+    	thrusterMap[1] = T200Thruster(1, 0x2E); //This should keep a reference? The copy disabling thing should keep us safe
     }
 
     void init()
@@ -43,21 +45,21 @@ public:
             diagnostic_msgs::DiagnosticStatus status;
             status.name = "Thrusters";
             status.hardware_id = "Thrusters";
-
-            thrusterr.updateStatus();
-            thrusterl.updateStatus();
             
-            if (thrusterOk(thrusterr) && thrusterOk(thrusterl))
-                status.level = status.OK;
-            else
-                status.level = status.ERROR;
-
-            PushDiagData(status, thrusterr, "Thruster R");
-            PushDiagData(status, thrusterl, "Thruster L");
-            
-            thrusterr.setVelocityRatio(tLeftForward);
-            thrusterl.setVelocityRatio(tRightForward);
-
+			for(std::map<int, GenericThruster>::iterator iter = thrusterMap.begin(); iter != thrusterMap.end(); iter++)
+			{
+				iter->second.updateStatus();
+				
+				if (thrusterOk(iter->second) && status.level != status.ERROR)
+					status.level = status.OK;
+				else
+					status.level = status.ERROR;
+				
+				PushDiagData(status, iter->second, std::to_string(iter->first));
+				
+				iter->second.setVelocity(msg.at(iter->first));
+			}
+			
             rate.sleep();
         }
         spinner.stop();
@@ -95,10 +97,7 @@ public:
 
     void thrusterCb(const sub_trajectory::ThrusterCmd &msg)
     {
-		for(std::map<int, GenericThruster>::iterator iter = thrusterMap.begin(); iter != thrusterMap.end(); iter++)
-		{
-			iter->second.setVelocity(msg.at(iter->first));
-		}
+		
     }
     
     float magnitude(float x, float y) //return the magnitude of a 2d vector

@@ -88,6 +88,11 @@ double SeabotixThruster::getTemperature()
     return raw_temp;
 }
 
+double SeabotixThruster::getVoltage()
+{
+	return 0.0;
+}
+
 double SeabotixThruster::getCurrent()
 {
     return 0.1*getRawCurrentMeasurement();

@@ -85,3 +85,28 @@ bool ThrusterPWM::inLimits()
 {
 	return true;
 }
+
+void ThrusterPWM::updateStatus()
+{
+    return;
+}
+
+double ThrusterPWM::getTemperature()
+{
+    return 0.0;
+}
+
+double ThrusterPWM::getVoltage()
+{
+	return 0.0;
+}
+
+double ThrusterPWM::getCurrent()
+{
+    return 0.0;
+}
+
+bool ThrusterPWM::isAlive()
+{
+    return true;
+}
