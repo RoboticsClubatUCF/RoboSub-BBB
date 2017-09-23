@@ -193,7 +193,7 @@ std::string T200Thruster::getType()
 	return "BlueRobotics T200";
 }
 
-std::string T200Thruster::inLimits()
+bool T200Thruster::inLimits()
 {
 	return true;
 }

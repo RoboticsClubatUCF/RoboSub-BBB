@@ -74,6 +74,8 @@ SeabotixThruster(int bus_number, unsigned char address);
 ////////////////////////////////////////////////////////////////////////////////
 void setVelocityRatio(double  velocity_scale, SeabotixThrusterDirection direction);
 
+void linearizeOutput(double velocity_desired);
+
 
 unsigned char getFaultStatus();
 

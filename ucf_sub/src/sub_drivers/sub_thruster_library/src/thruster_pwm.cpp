@@ -51,6 +51,7 @@ void ThrusterPWM::setVelocityRatio(double velocity_ratio)
     setVelocity(velocity_ratio);
 }
 
+#ifdef LINEARIZE_OUTPUT
 double ThrusterPWM::linearizeOutput(double velocity_desired)
 {
     double thruster_setting = 0.0;
@@ -70,6 +71,7 @@ double ThrusterPWM::linearizeOutput(double velocity_desired)
     return thruster_setting;
 
 }
+#endif
 
 void ThrusterPWM::setVelocity(double target_ratio)
 {

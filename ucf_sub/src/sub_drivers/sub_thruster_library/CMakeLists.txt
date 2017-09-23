@@ -25,8 +25,8 @@ catkin_package(
 include_directories(include ${UCFUTILITIES_INCLUDE_DIRS})
 
 add_library(sub_thrusters src/t200_thruster.cpp)
-add_library(sub_thrusters src/seabotix_thruster.cpp)
-add_library(sub_thrusters src/thruster_pwm.cpp)
+#add_library(sub_thrusters src/seabotix_thruster.cpp)
+#add_library(sub_thrusters src/thruster_pwm.cpp)
 target_link_libraries(sub_thrusters ${UCFUTILITIES_LIBS})
 
 ## Install libraries and runtime dependencies

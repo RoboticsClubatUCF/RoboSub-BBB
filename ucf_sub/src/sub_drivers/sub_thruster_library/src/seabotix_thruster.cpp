@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cstdio>
 
-#define LINEARIZE_OUTPUT
+//#define LINEARIZE_OUTPUT
 
 SeabotixThruster::SeabotixThruster(int bus_number, unsigned char address) :
     i2c_interface_(bus_number, address), GenericThruster()

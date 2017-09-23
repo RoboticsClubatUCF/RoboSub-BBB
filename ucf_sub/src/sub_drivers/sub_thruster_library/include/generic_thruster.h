@@ -27,22 +27,12 @@ void operator=(GenericThruster const &x) = delete;
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Function for setting the thruster's velocity.
 ///
-/// Overload to set thruster direction and power as a ratio of maximum supported velocity
+/// Function to set thruster direction and power as a ratio of maximum supported velocity
 ///
 /// \param velocity_ratio    The ratio between -1.0 and 1.0 for thruster power.
 ////////////////////////////////////////////////////////////////////////////////
-virtual void setVelocityRatio(double  velocity_ratio) = 0;
-////////////////////////////////////////////////////////////////////////////////
-/// \brief linearizes thruster output and almost eliminates deadzone
-///
-/// Function that takes desired thrust output as a fraction from 1.0 to -1.0 and
-/// applies a linear function based on data from the manufacturer so that deadband is 
-/// reduced to a range from 0.01 to -0.01 and maximum output is the same in both 
-/// directions
-///
-/// \param velocity_desired desired thruster output
-////////////////////////////////////////////////////////////////////////////////
-virtual double linearizeOutput(double velocity_desired) = 0;
+virtual void setVelocityRatio(double velocity_ratio) = 0;
+
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Forces the thruster to update its most recent status data.
 ///

@@ -55,6 +55,8 @@ T200Thruster(int bus_number, unsigned char address);
 
 void setVelocityRatio(double velocity_ratio, T200ThrusterDirection direction);
 
+void linearizeOutput(double velocity_desired);
+
 private:
 
 static const int STATUS_DATA_BYTES = 9;
