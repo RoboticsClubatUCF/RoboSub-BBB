@@ -12,7 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package()
 
 include_directories(${catkin_INCLUDE_DIRS})
+#include_directories(../../../../jsoncpp/dist)
 
 add_executable(sub_thruster_manager_node src/sub_thruster_manager_node.cpp)
-target_link_libraries(sub_thruster_manager_node ${catkin_LIBRARIES})
+target_link_libraries(sub_thruster_manager_node ${catkin_LIBRARIES} jsoncpp)
 
