@@ -6,7 +6,7 @@
 
 #include <ros/ros.h>
 #include <diagnostic_msgs/DiagnosticStatus.h>
-#include <diagnostic_msgs/SelfTest.h>
+#include <diagnostic_msgs/SelfTest.h> //TODO: implement self tests
 
 #include <iostream>
 #include <fstream>
@@ -22,9 +22,10 @@ class ThrusterManager {
     ros::Publisher diagnostics_output;
 
     sub_trajectory::ThrusterCmd savedMsg;
-    ros::AsyncSpinner spinner;
     
     std::map<int, GenericThruster> thrusterMap;
+
+    
 
 public:
     ThrusterManager() : spinner(1)
@@ -42,18 +43,13 @@ public:
     }
 
     void init()
-    {
-        if(spinner.canStart())
-            spinner.start();
-        else
-            return;   
-        
+    {     
         ifstream configFile("config.json");
         if(!ifstream.is_open()){
             ROS_ERROR("%s thruster controller couldn't open config file", SUB_SECTION_NAME);
             return;
         }
-        
+
         Json::Reader reader;
         Json::Value obj;
         reader.parse(configFile, obj);
@@ -61,23 +57,50 @@ public:
         Json::Value& thrustersJson = obj[SUB_SECTION_NAME];
         for(int i = 0; i < thrustersJson.size(); i++) {
             int thrusterID = thrustersJson[i]["ID"].asInt();
-            int thrusterType = thrustersJson[i]["Type"].asInt();
+            int thrusterType = thrustersJson[i]["Type"].asInt(); //TODO: support for multiple thruster types
             int thrusterAddress = thrustersJson[i]["Address"].asInt();
-            thrusterMap[thrusterID] = T200Thruster(1, thrusterAddress);
-        }
-        //TODO: Iterate through the thruster param and build thruster objects.
-    	//No fucking idea how you build things from JSON in C++ but ROS does it somehow.
+            try{
+                thrusterMap[thrusterID] = T200Thruster(1, thrusterAddress);
+            }
+            catch(I2CException e){
+                //If we get here there's a bus problem
+                //Publish an error message for the diagnostic system to do something about
+                diagnostic_msgs::DiagnosticStatus status;
+                status.name = "Thrusters";
+                status.hardware_id = "Thrusters";
+                status.level = status.ERROR;
+                diagnostics_output.publish(status);
+                ros::spinOnce();
+            }
+            else {
 
+            }
+        }
+    }
+
+    void spin()
+    {
         ros::Rate rate(4);
         while(ros::ok()) {
             //Publish diagnostic data here
             diagnostic_msgs::DiagnosticStatus status;
             status.name = "Thrusters";
-            status.hardware_id = "Thrusters";
+            status.hardware_id = "Thrusters"; //TODO: Different hardware ID/section based on sub section name?
             
 			for(auto& thruster : thrusterMap)
 			{
-				iter.second.updateStatus();
+                try {
+                    iter.second.updateStatus();
+                    iter.second.setVelocity(savedMsg.cmd.at(iter.first));
+                } catch(I2CException e) {
+                    //Publish an error message for the diagnostic system to do something about
+                    diagnostic_msgs::DiagnosticStatus status;
+                    status.name = "Thrusters";
+                    status.hardware_id = "Thrusters";
+                    status.level = status.ERROR;
+                    diagnostics_output.publish(status);
+                    ros::spinOnce();
+                }
 				
 				if (thrusterOk(iter.second) && status.level != status.ERROR)
 					status.level = status.OK;
@@ -85,14 +108,12 @@ public:
 					status.level = status.ERROR;
 				
 				PushDiagData(status, iter.second, std::to_string(iter.first));
-				
-				iter.second.setVelocity(savedMsg.cmd.at(iter.first));
             }
             
             diagnostics_output.publish(status);
+            ros::spinOnce();
             rate.sleep();
         }
-        spinner.stop();
     }
     
     bool thrusterOk (GenericThruster & thruster)
@@ -130,9 +151,33 @@ public:
 		savedMsg = msg;
     }
     
-    float magnitude(float x, float y) //return the magnitude of a 2d vector
+    //Self test function
+    void testThrusterConnections(diagnostic_updater::DiagnosticStatusWrapper& status)
     {
-        return sqrt(x*x + y*y);
+        ifstream configFile("config.json");
+        if(!ifstream.is_open()){
+            ROS_ERROR("%s thruster controller couldn't open config file", SUB_SECTION_NAME);
+            status.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "Config file didn't load");
+            return;
+        }
+
+        Json::Reader reader;
+        Json::Value obj;
+        reader.parse(configFile, obj);
+
+        Json::Value& thrustersJson = obj[SUB_SECTION_NAME];
+        for(int i = 0; i < thrustersJson.size(); i++) {
+            int thrusterID = thrustersJson[i]["ID"].asInt();
+            int thrusterType = thrustersJson[i]["Type"].asInt(); //TODO: support for multiple thruster types
+            int thrusterAddress = thrustersJson[i]["Address"].asInt();
+            try{
+                T200Thruster(1, thrusterAddress);
+            }
+            catch(I2CException e){
+                status.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "Thruster couldn't connect");
+                status.add("Fail id", thrusterAddress); //TODO: What if multiple thrusters fail
+            }
+        }
     }
 };
 
@@ -141,7 +186,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "thruster_driver");
     ThrusterManager tc;
     tc.init();
-
+    tc.spin();
     return 0;
 }
 
