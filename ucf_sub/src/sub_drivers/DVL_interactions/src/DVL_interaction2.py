@@ -16,6 +16,7 @@
 # TODO: ROS specific publishing functions
 
 import serial
+import rospy
 
 def DVLformatPD5(DVLserialPacket):
     # 

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+  <name>DVL_interactions</name>
+  <version>0.0.0</version>
+  <description>A package to control reading data from the Teledyne Doppler Velocity Log</description>
+
+  <!-- One maintainer tag required, multiple allowed, one person per tag --> 
+  <!-- Example:  -->
+  <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
+  <maintainer email="sumnersw@knights.ucf.edu">Stephen</maintainer>
+
+  <!-- One license tag required, multiple allowed, one license per tag -->
+  <!-- Commonly used license strings: -->
+  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
+
+
