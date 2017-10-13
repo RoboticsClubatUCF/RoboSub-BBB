@@ -13,10 +13,10 @@
 # found at the time to handle such were heavily reliant on the Windows API. Due to the nature of Ness's 
 # operating system being Ubuntu Linux, Python was chosen as the language to port over to.
 #
-# TODO: ROS specific publishing functions
 
 import serial
 import rospy
+import std_msgs
 
 def DVLformatPD5(DVLserialPacket):
     # 
@@ -186,8 +186,12 @@ def DVL(NumFormat, SerialSpeed):
     else:
         return 5
 
-    dvlPort = '/dev/___'    # TODO: need port name
+    dvlPort = '/dev/tty01'    # UART1 Rx and Tx, 
     DVLserial = serial.Serial(DVLport, SerialSpeed, bytesize=EIGHTBITS, timeout=1.0) # function argument "SerialSpeed" sets speed of communication, generally its either 9600 or 115200
+
+
+# TODO: re-write this section so that instead of opening and closing the connection,
+#       The program continuously reads in the data and publishes as often as it can.
     
     DVLserial.open()
     connection_check = DVLserial.readinto(DVLraw) # dump a portion of the DVL serial stream into an array for processing
@@ -255,3 +259,16 @@ elif DVLcheck == 4:
 elif DVLcheck == 5:
     print("/nYou have requested a non-exsistent, or non-programmed format option, please choose 5")
 
+
+def DVL_talker():
+    pub=rospy.Publisher('DVL_talk', ByteMultiArray)
+    rospy.init_node('DVL_talker', anonymous=True)
+    rate=rospy.Rate(10)
+    while not rospy.is_shutdown():
+        msg=DVL(5,9600)
+        rospy.loginfo(DVLdataPD5)
+        pub.publish(DVLdataPD5)
+        rate.sleep()
+
+
+    
