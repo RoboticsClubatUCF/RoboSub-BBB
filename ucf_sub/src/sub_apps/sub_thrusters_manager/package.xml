@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>sub_thrusters_manager</name>
+  <name>sub_thruster_manager</name>
   <version>0.0.0</version>
-  <description>The sub_thrusters_manager package</description>
+  <description>The sub_thruster_manager package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -41,7 +41,7 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>sub_thrusters_library</build_depend>
+  <build_depend>sub_thruster_library</build_depend>
   <run_depend>roscpp</run_depend>
 
 
