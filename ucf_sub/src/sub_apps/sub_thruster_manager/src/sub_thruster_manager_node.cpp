@@ -24,7 +24,7 @@ class ThrusterManager {
     self_test::TestRunner self_test_;
 
     sub_trajectory::ThrusterCmd savedMsg;
-    
+
     std::map<int, GenericThruster> thrusterMap;
 
     ros::ServiceServer initServer;
@@ -43,7 +43,7 @@ public:
         self_test_.add("Test connections", this, &ThrusterManager::testThrusterConnections);
 
         initServer = nh_.advertiseService("initThrusters", &ThrusterManager::initService, this);
-    	
+
     	//thrusterMap[0] = T200Thruster(1, 0x2D);
     	//thrusterMap[1] = T200Thruster(1, 0x2E); //This should keep a reference? The copy disabling thing should keep us safe
     }
@@ -68,7 +68,7 @@ public:
     }
 
     void init()
-    {     
+    {
         thrusterMap.clear();
         Json::Value& thrustersJson = loadConfig("config.json")[SUB_SECTION_NAME];
         for(int i = 0; i < thrustersJson.size(); i++) {
@@ -102,7 +102,7 @@ public:
             diagnostic_msgs::DiagnosticStatus status;
             status.name = "Thrusters";
             status.hardware_id = "Thrusters"; //TODO: Different hardware ID/section based on sub section name?
-            
+
 			for(auto& thruster : thrusterMap)
 			{
                 try {
@@ -112,27 +112,27 @@ public:
                     //Publish an error message for the diagnostic system to do something about
                     status.level = status.ERROR;
                 }
-				
+
 				if (thrusterOk(iter.second) && status.level != status.ERROR)
 					status.level = status.OK;
 				else
 					status.level = status.ERROR;
-				
+
 				PushDiagData(status, iter.second, std::to_string(iter.first));
             }
-            
+
             diagnostics_output.publish(status);
             ros::spinOnce();
             self_test_.checkTest();
             rate.sleep();
         }
     }
-    
+
     bool thrusterOk (GenericThruster & thruster)
     {
         return thruster.isAlive() && thruster.inLimits();
     }
-    
+
     void PushDiagData(diagnostic_msgs::DiagnosticStatus & statusmsg, GenericThruster & thruster, std::string thrusterName)
     {
         diagnostic_msgs::KeyValue thrusterValue;
@@ -140,7 +140,7 @@ public:
         thrusterValue.key = "Thruster Type";
         thrusterValue.value = thruster.getType();
         statusmsg.values.push_back(thrusterValue);
-        
+
         thrusterValue.key = thrusterName + " Alive";
         thrusterValue.value = BoolToString(thruster.isAlive());
         statusmsg.values.push_back(thrusterValue);
@@ -162,18 +162,19 @@ public:
     {
 		savedMsg = msg;
     }
-    
+
     //Self test function
     void testThrusterConnections(diagnostic_updater::DiagnosticStatusWrapper& status)
     {
         self_test_.setID("thrusterController");
         std::stringstream failedThrusters;
         Json::Value& thrustersJson = loadConfig("config.json")[SUB_SECTION_NAME];
-        for(int i = 0; i < thrustersJson.size(); i++) {
+        for(int i = 0; i < thrustersJson.size(); i++)
+		{
             int thrusterID = thrustersJson[i]["ID"].asInt();
             int thrusterType = thrustersJson[i]["Type"].asInt(); //TODO: support for multiple thruster types
             int thrusterAddress = thrustersJson[i]["Address"].asInt();
-            
+
             try{
                 T200Thruster(1, thrusterAddress).updateStatus();
             }
