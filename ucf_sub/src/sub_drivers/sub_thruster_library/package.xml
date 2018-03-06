@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>sub_thruster_library</name>
+  <name>sub_thrusters_library</name>
   <version>0.0.0</version>
   <description>A package to control various thrusters for robotic submarines, generally over I2C</description>
 

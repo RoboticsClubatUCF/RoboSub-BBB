@@ -10,8 +10,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 class GenericThruster
 {
-public:
-GenericThruster();
+protected:
+GenericThruster(int bus_number, unsigned char address) : i2c_interface_(bus_number, address) {};
 
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Disables copy constructors for thrusters
@@ -72,8 +72,6 @@ virtual bool isAlive() = 0;
 virtual std::string getType() = 0;
 
 virtual bool inLimits() = 0;
-
-private:
 
 ByteBuffer status_data_;
 I2C_Interface i2c_interface_;

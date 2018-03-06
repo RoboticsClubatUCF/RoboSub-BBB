@@ -53,9 +53,19 @@ T200Thruster(int bus_number, unsigned char address);
 ////////////////////////////////////////////////////////////////////////////////
 ~T200Thruster();
 
+void setVelocityRatio(double velocity_ratio);
+void updateStatus();
+double getVoltage();
+double getTemperature();
+double getCurrent();
+int getPulseCount();
+bool isAlive();
+std::string getType();
+bool inLimits();
+
 void setVelocityRatio(double velocity_ratio, T200ThrusterDirection direction);
 
-void linearizeOutput(double velocity_desired);
+double linearizeOutput(double velocity_desired);
 
 private:
 

@@ -1,4 +1,4 @@
-#include <sub_thruster_library/t200_thruster.h>
+#include "t200_thruster.h"
 #include <cmath>
 #include <cstdio>
 
@@ -8,7 +8,7 @@ constexpr double T200Thruster::CURRENT_SCALE_FACTOR;
 constexpr double T200Thruster::VOLTAGE_SCALE_FACTOR;
 
 T200Thruster::T200Thruster(int bus_number, unsigned char address) :
-    i2c_interface_(bus_number, address), GenericThruster()
+    GenericThruster(bus_number, address)
 {
     for (int i = 0; i < STATUS_DATA_BYTES; i++)
     {

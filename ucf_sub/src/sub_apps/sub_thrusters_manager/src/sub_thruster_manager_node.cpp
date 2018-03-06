@@ -1,6 +1,6 @@
-#include "sub_thruster_library/t200_thruster.h"
+#include "t200_thruster.h"
 //#include "sub_thruster_library/seabotix_thruster.h"
-#include "sub_thruster_library/generic_thruster.h"
+#include "generic_thruster.h"
 
 #include <json/json.h>
 

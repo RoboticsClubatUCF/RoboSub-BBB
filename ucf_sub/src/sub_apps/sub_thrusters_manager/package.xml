@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>sub_thruster_manager</name>
+  <name>sub_thrusters_manager</name>
   <version>0.0.0</version>
-  <description>The sub_thruster_manager package</description>
+  <description>The sub_thrusters_manager package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
