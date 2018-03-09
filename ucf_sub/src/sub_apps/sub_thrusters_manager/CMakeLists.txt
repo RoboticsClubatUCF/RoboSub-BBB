@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   sub_thrusters_library
+  sub_trajectory
 )
 
 catkin_package()

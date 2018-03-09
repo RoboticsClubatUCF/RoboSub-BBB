@@ -1,13 +1,14 @@
 #include "t200_thruster.h"
 //#include "sub_thruster_library/seabotix_thruster.h"
 #include "generic_thruster.h"
-
+#include "sub_trajectory/ThrusterCmd.h"
 #include <json/json.h>
 
 #include <ros/ros.h>
 #include <std_msgs/Empty.h>
 #include <diagnostic_msgs/DiagnosticStatus.h>
 #include <diagnostic_msgs/SelfTest.h> //TODO: implement self tests
+#include <self_test/self_test.h>
 
 #include <iostream>
 #include <fstream>
@@ -30,7 +31,7 @@ class ThrusterManager {
     ros::ServiceServer initServer;
 
 public:
-    ThrusterManager() : spinner(1), self_test_()
+    ThrusterManager() : self_test_()
     {
         for(int i = 0; i < 8; i++) {
             savedMsg.cmd.push_back(0.0);
@@ -51,10 +52,11 @@ public:
     Json::Value loadConfig(std::string filename)
     {
         ifstream configFile(filename);
-        if(!ifstream.is_open()){
+        if(!configFile.is_open()){
             ROS_ERROR("%s thruster controller couldn't open config file", SUB_SECTION_NAME);
-            status.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "Config file didn't load");
-            return;
+            //status.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "Config file didn't load");
+            Json::Value obj;
+            return obj;
         }
 
         Json::Reader reader;
@@ -62,9 +64,10 @@ public:
         reader.parse(configFile, obj);
         return obj;
     }
-    void initService(std_msgs::Empty& req, std_msgs::Empty& resp)
+    bool initService(std_msgs::Empty& req, std_msgs::Empty& resp)
     {
         init();
+        return true;
     }
 
     void init()
@@ -76,7 +79,7 @@ public:
             int thrusterType = thrustersJson[i]["Type"].asInt(); //TODO: support for multiple thruster types
             int thrusterAddress = thrustersJson[i]["Address"].asInt();
             try{
-                thrusterMap[thrusterID] = T200Thruster(1, thrusterAddress);
+                thrusterMap.emplace(thrusterID, 1, thrusterAddress);
             }
             catch(I2CException e){
                 //If we get here there's a bus problem
@@ -87,9 +90,6 @@ public:
                 status.level = status.ERROR;
                 diagnostics_output.publish(status);
                 ros::spinOnce();
-            }
-            else {
-
             }
         }
     }
@@ -103,8 +103,8 @@ public:
             status.name = "Thrusters";
             status.hardware_id = "Thrusters"; //TODO: Different hardware ID/section based on sub section name?
 
-			for(auto& thruster : thrusterMap)
-			{
+            for(std::map<int, GenericThruster>::iterator iter =  thrusterMap.begin(); iter != thrusterMap.end(); ++iter)
+            {
                 try {
                     iter.second.updateStatus();
                     iter.second.setVelocity(savedMsg.cmd.at(iter.first));
@@ -113,12 +113,12 @@ public:
                     status.level = status.ERROR;
                 }
 
-				if (thrusterOk(iter.second) && status.level != status.ERROR)
-					status.level = status.OK;
-				else
-					status.level = status.ERROR;
+                if (thrusterOk(iter.second) && status.level != status.ERROR)
+                    status.level = status.OK;
+                else
+                    status.level = status.ERROR;
 
-				PushDiagData(status, iter.second, std::to_string(iter.first));
+                PushDiagData(status, iter.second, std::to_string(iter.first));
             }
 
             diagnostics_output.publish(status);
