@@ -76,5 +76,5 @@ virtual bool inLimits() = 0;
 ByteBuffer status_data_;
 I2C_Interface i2c_interface_;
 };
-
+#define Generic_Thruster_H
 #endif
