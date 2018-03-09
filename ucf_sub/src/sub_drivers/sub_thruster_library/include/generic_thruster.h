@@ -10,7 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 class GenericThruster
 {
-protected:
+public:
 GenericThruster(int bus_number, unsigned char address) : i2c_interface_(bus_number, address) {};
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,7 +22,10 @@ GenericThruster(int bus_number, unsigned char address) : i2c_interface_(bus_numb
 GenericThruster(GenericThruster const &) = delete;
 void operator=(GenericThruster const &x) = delete;
 
-~GenericThruster();
+~GenericThruster()
+{
+
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Function for setting the thruster's velocity.
@@ -73,6 +76,7 @@ virtual std::string getType() = 0;
 
 virtual bool inLimits() = 0;
 
+protected:
 ByteBuffer status_data_;
 I2C_Interface i2c_interface_;
 };

@@ -5,13 +5,14 @@
 #include <json/json.h>
 
 #include <ros/ros.h>
-#include <std_msgs/Empty.h>
+#include <std_srvs/Empty.h>
 #include <diagnostic_msgs/DiagnosticStatus.h>
 #include <diagnostic_msgs/SelfTest.h> //TODO: implement self tests
 #include <self_test/self_test.h>
 
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 //TODO: Determine module name at runtime (needs some capemgr fuckery)
 #define SUB_SECTION_NAME "COMPUTE"
@@ -26,7 +27,14 @@ class ThrusterManager {
 
     sub_trajectory::ThrusterCmd savedMsg;
 
-    std::map<int, GenericThruster> thrusterMap;
+//    std::map<int, GenericThruster> thrusterMap;
+
+    std::map<int, std::unique_ptr<GenericThruster>> thrusterMap;
+
+
+
+//std::map<int, std::unique_ptr<element>> elementMap;
+//elementMap[17] = std::unique_ptr<element>(new elasticFrame3D(3.14, 2.71));
 
     ros::ServiceServer initServer;
 
@@ -64,7 +72,7 @@ public:
         reader.parse(configFile, obj);
         return obj;
     }
-    bool initService(std_msgs::Empty& req, std_msgs::Empty& resp)
+    bool initService(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp)
     {
         init();
         return true;
@@ -79,7 +87,9 @@ public:
             int thrusterType = thrustersJson[i]["Type"].asInt(); //TODO: support for multiple thruster types
             int thrusterAddress = thrustersJson[i]["Address"].asInt();
             try{
-                thrusterMap.emplace(thrusterID, 1, thrusterAddress);
+  //              thrusterMap.emplace(thrusterID, 1, thrusterAddress);
+//elementMap[17] = std::unique_ptr<element>(new elasticFrame3D(3.14, 2.71));
+                  thrusterMap[i] = std::unique_ptr<GenericThruster>(new T200Thruster(1,thrusterAddress));
             }
             catch(I2CException e){
                 //If we get here there's a bus problem
@@ -102,12 +112,12 @@ public:
             diagnostic_msgs::DiagnosticStatus status;
             status.name = "Thrusters";
             status.hardware_id = "Thrusters"; //TODO: Different hardware ID/section based on sub section name?
-
-            for(std::map<int, GenericThruster>::iterator iter =  thrusterMap.begin(); iter != thrusterMap.end(); ++iter)
+            for(auto& iter:thrusterMap)
+//            for(std::map<int, GenericThruster>::iterator iter =  thrusterMap.begin(); iter != thrusterMap.end(); ++iter)
             {
                 try {
-                    iter.second.updateStatus();
-                    iter.second.setVelocity(savedMsg.cmd.at(iter.first));
+                    iter.second->updateStatus();
+                    iter.second->setVelocityRatio(savedMsg.cmd.at(iter.first));
                 } catch(I2CException e) {
                     //Publish an error message for the diagnostic system to do something about
                     status.level = status.ERROR;
@@ -128,33 +138,33 @@ public:
         }
     }
 
-    bool thrusterOk (GenericThruster & thruster)
+    bool thrusterOk (std::unique_ptr<GenericThruster> & thruster)
     {
-        return thruster.isAlive() && thruster.inLimits();
+        return thruster->isAlive() && thruster->inLimits();
     }
 
-    void PushDiagData(diagnostic_msgs::DiagnosticStatus & statusmsg, GenericThruster & thruster, std::string thrusterName)
+    void PushDiagData(diagnostic_msgs::DiagnosticStatus & statusmsg, std::unique_ptr<GenericThruster> & thruster, std::string thrusterName)
     {
         diagnostic_msgs::KeyValue thrusterValue;
 
         thrusterValue.key = "Thruster Type";
-        thrusterValue.value = thruster.getType();
+        thrusterValue.value = thruster->getType();
         statusmsg.values.push_back(thrusterValue);
 
         thrusterValue.key = thrusterName + " Alive";
-        thrusterValue.value = BoolToString(thruster.isAlive());
+        thrusterValue.value = BoolToString(thruster->isAlive());
         statusmsg.values.push_back(thrusterValue);
 
         thrusterValue.key = thrusterName + " Voltage";
-        thrusterValue.value = std::to_string(thruster.getVoltage());
+        thrusterValue.value = std::to_string(thruster->getVoltage());
         statusmsg.values.push_back(thrusterValue);
 
         thrusterValue.key = thrusterName + " Current";
-        thrusterValue.value = std::to_string(thruster.getCurrent());
+        thrusterValue.value = std::to_string(thruster->getCurrent());
         statusmsg.values.push_back(thrusterValue);
 
         thrusterValue.key = thrusterName + " Temperature";
-        thrusterValue.value = std::to_string(thruster.getTemperature());
+        thrusterValue.value = std::to_string(thruster->getTemperature());
         statusmsg.values.push_back(thrusterValue);
     }
 
