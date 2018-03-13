@@ -67,9 +67,10 @@ public:
             return obj;
         }
 
-        Json::Reader reader;
+        ROS_INFO("%s thruster controller config loading", SUB_SECTION_NAME);
         Json::Value obj;
-        reader.parse(configFile, obj);
+        configFile >> obj;
+        ROS_INFO("%s thruster controller config loaded", SUB_SECTION_NAME);
         return obj;
     }
     bool initService(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp)
@@ -81,18 +82,21 @@ public:
     void init()
     {
         thrusterMap.clear();
-        Json::Value& thrustersJson = loadConfig("config.json")[SUB_SECTION_NAME];
+        Json::Value thrustersJson = loadConfig("config.json")[SUB_SECTION_NAME];
+        savedMsg = sub_trajectory::ThrusterCmd();
+        savedMsg.cmd.resize(thrustersJson.size(), 0.0);
         for(int i = 0; i < thrustersJson.size(); i++) {
             int thrusterID = thrustersJson[i]["ID"].asInt();
             int thrusterType = thrustersJson[i]["Type"].asInt(); //TODO: support for multiple thruster types
             int thrusterAddress = thrustersJson[i]["Address"].asInt();
+            ROS_INFO("Initializing thruster %d", thrusterID);
             try{
-  //              thrusterMap.emplace(thrusterID, 1, thrusterAddress);
-//elementMap[17] = std::unique_ptr<element>(new elasticFrame3D(3.14, 2.71));
                   thrusterMap[i] = std::unique_ptr<GenericThruster>(new T200Thruster(1,thrusterAddress));
             }
             catch(I2CException e){
                 //If we get here there's a bus problem
+                ROS_ERROR("I2C error while connecting to thruster address %x", thrusterAddress);
+                thrusterMap.erase(i);
                 //Publish an error message for the diagnostic system to do something about
                 diagnostic_msgs::DiagnosticStatus status;
                 status.name = "Thrusters";
@@ -102,6 +106,7 @@ public:
                 ros::spinOnce();
             }
         }
+        ROS_INFO("Done initializing thrusters");
     }
 
     void spin()
@@ -112,8 +117,8 @@ public:
             diagnostic_msgs::DiagnosticStatus status;
             status.name = "Thrusters";
             status.hardware_id = "Thrusters"; //TODO: Different hardware ID/section based on sub section name?
+            ROS_DEBUG("Updating thrusters");
             for(auto& iter:thrusterMap)
-//            for(std::map<int, GenericThruster>::iterator iter =  thrusterMap.begin(); iter != thrusterMap.end(); ++iter)
             {
                 try {
                     iter.second->updateStatus();
@@ -207,6 +212,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "thruster_driver");
     ThrusterManager tc;
     tc.init();
+    ROS_INFO("Thruster controller initialized, spinning");
     tc.spin();
     return 0;
 }
