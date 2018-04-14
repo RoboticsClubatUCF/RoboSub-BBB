@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import HIH6130
 import rospy
 from sensor_msgs import Temperature
