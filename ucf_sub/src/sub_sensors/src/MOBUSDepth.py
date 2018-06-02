@@ -6,7 +6,7 @@ from sensor_msgs.msg import Temperature
 from std_msgs.msg import Float32
 
 def publish():
-	sensor = modbus(method='rtu', port='/dev/ttyUSB0', baudrate= 9600)
+	sensor = modbus(method='rtu', port='/dev/ttyUSB0', baudrate=115200)
 	sensor.connect()
 	tempPub = rospy.Publisher('ExternalTemperature', Temperature, queue_size=1)
 	depthPub = rospy.Publisher('Depth', Float32, queue_size=1)
