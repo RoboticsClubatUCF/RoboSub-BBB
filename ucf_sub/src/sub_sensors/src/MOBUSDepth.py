@@ -19,9 +19,9 @@ def publish():
 	freq = rospy.Rate(1)
 	while not rospy.is_shutdown():
 		rr = sensor.read_holding_registers(address=8, count=2, unit=1)
-		temp.temperature = struct.unpack('>f',struct.pack('HH', *rr.registers)) 
+		temp.temperature = struct.unpack('>f',struct.pack('>HH', *rr.registers)) 
 		rr = sensor.read_holding_registers(address=2, count=2, unit=1)
-		depth.data = struct.unpack('>f',struct.pack('HH', *rr.registers))
+		depth.data = struct.unpack('>f',struct.pack('>HH', *rr.registers))
 		tempPub.publish(temp)
 		depthPub.publish(depth)
 		freq.sleep()
