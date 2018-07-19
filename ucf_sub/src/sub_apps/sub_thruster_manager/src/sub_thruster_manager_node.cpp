@@ -1,18 +1,16 @@
-#include "t200_thruster.h"
+#include "sub_thruster_library/t200_thruster.h"
 //#include "sub_thruster_library/seabotix_thruster.h"
-#include "generic_thruster.h"
-#include "sub_trajectory/ThrusterCmd.h"
+#include "sub_thruster_library/generic_thruster.h"
+
 #include <json/json.h>
 
 #include <ros/ros.h>
-#include <std_srvs/Empty.h>
+#include <std_msgs/Empty.h>
 #include <diagnostic_msgs/DiagnosticStatus.h>
 #include <diagnostic_msgs/SelfTest.h> //TODO: implement self tests
-#include <self_test/self_test.h>
 
 #include <iostream>
 #include <fstream>
-#include <memory>
 
 //TODO: Determine module name at runtime (needs some capemgr fuckery)
 #define SUB_SECTION_NAME "COMPUTE"
@@ -28,19 +26,12 @@ class ThrusterManager {
 
     sub_trajectory::ThrusterCmd savedMsg;
 
-//    std::map<int, GenericThruster> thrusterMap;
-
-    std::map<int, std::unique_ptr<GenericThruster>> thrusterMap;
-
-
-
-//std::map<int, std::unique_ptr<element>> elementMap;
-//elementMap[17] = std::unique_ptr<element>(new elasticFrame3D(3.14, 2.71));
+    std::map<int, GenericThruster> thrusterMap;
 
     ros::ServiceServer initServer;
 
 public:
-    ThrusterManager() : self_test_()
+    ThrusterManager() : spinner(1), self_test_()
     {
         for(int i = 0; i < 8; i++) {
             savedMsg.cmd.push_back(0.0);
@@ -61,43 +52,35 @@ public:
     Json::Value loadConfig(std::string filename)
     {
         ifstream configFile(filename);
-        if(!configFile.is_open()){
+        if(!ifstream.is_open()){
             ROS_ERROR("%s thruster controller couldn't open config file", SUB_SECTION_NAME);
-            //status.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "Config file didn't load");
-            Json::Value obj;
-            return obj;
+            status.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "Config file didn't load");
+            return;
         }
 
-        ROS_INFO("%s thruster controller config loading", SUB_SECTION_NAME);
+        Json::Reader reader;
         Json::Value obj;
-        configFile >> obj;
-        ROS_INFO("%s thruster controller config loaded", SUB_SECTION_NAME);
+        reader.parse(configFile, obj);
         return obj;
     }
-    bool initService(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp)
+    void initService(std_msgs::Empty& req, std_msgs::Empty& resp)
     {
         init();
-        return true;
     }
 
     void init()
     {
         thrusterMap.clear();
-        Json::Value thrustersJson = loadConfig(CONFIG_FILE_PATH)[SUB_SECTION_NAME];
-        savedMsg = sub_trajectory::ThrusterCmd();
-        savedMsg.cmd.resize(thrustersJson.size(), 0.0);
+        Json::Value& thrustersJson = loadConfig(CONFIG_FILE_PATH)[SUB_SECTION_NAME];
         for(int i = 0; i < thrustersJson.size(); i++) {
             int thrusterID = thrustersJson[i]["ID"].asInt();
             int thrusterType = thrustersJson[i]["Type"].asInt(); //TODO: support for multiple thruster types
             int thrusterAddress = thrustersJson[i]["Address"].asInt();
-            ROS_INFO("Initializing thruster %d", thrusterID);
             try{
-                  thrusterMap[i] = std::unique_ptr<GenericThruster>(new T200Thruster(1,thrusterAddress));
+                thrusterMap[thrusterID] = T200Thruster(1, thrusterAddress);
             }
             catch(I2CException e){
                 //If we get here there's a bus problem
-                ROS_ERROR("I2C error while connecting to thruster address %x", thrusterAddress);
-                thrusterMap.erase(i);
                 //Publish an error message for the diagnostic system to do something about
                 diagnostic_msgs::DiagnosticStatus status;
                 status.name = "Thrusters";
@@ -106,8 +89,10 @@ public:
                 diagnostics_output.publish(status);
                 ros::spinOnce();
             }
+            else {
+
+            }
         }
-        ROS_INFO("Done initializing thrusters");
     }
 
     void spin()
@@ -118,23 +103,23 @@ public:
             diagnostic_msgs::DiagnosticStatus status;
             status.name = "Thrusters";
             status.hardware_id = "Thrusters"; //TODO: Different hardware ID/section based on sub section name?
-            ROS_DEBUG("Updating thrusters");
-            for(auto& iter:thrusterMap)
-            {
+
+			for(auto& thruster : thrusterMap)
+			{
                 try {
-                    iter.second->updateStatus();
-                    iter.second->setVelocityRatio(savedMsg.cmd.at(iter.first));
+                    iter.second.updateStatus();
+                    iter.second.setVelocity(savedMsg.cmd.at(iter.first));
                 } catch(I2CException e) {
                     //Publish an error message for the diagnostic system to do something about
                     status.level = status.ERROR;
                 }
 
-                if (thrusterOk(iter.second) && status.level != status.ERROR)
-                    status.level = status.OK;
-                else
-                    status.level = status.ERROR;
+				if (thrusterOk(iter.second) && status.level != status.ERROR)
+					status.level = status.OK;
+				else
+					status.level = status.ERROR;
 
-                PushDiagData(status, iter.second, std::to_string(iter.first));
+				PushDiagData(status, iter.second, std::to_string(iter.first));
             }
 
             diagnostics_output.publish(status);
@@ -144,33 +129,33 @@ public:
         }
     }
 
-    bool thrusterOk (std::unique_ptr<GenericThruster> & thruster)
+    bool thrusterOk (GenericThruster & thruster)
     {
-        return thruster->isAlive() && thruster->inLimits();
+        return thruster.isAlive() && thruster.inLimits();
     }
 
-    void PushDiagData(diagnostic_msgs::DiagnosticStatus & statusmsg, std::unique_ptr<GenericThruster> & thruster, std::string thrusterName)
+    void PushDiagData(diagnostic_msgs::DiagnosticStatus & statusmsg, GenericThruster & thruster, std::string thrusterName)
     {
         diagnostic_msgs::KeyValue thrusterValue;
 
         thrusterValue.key = "Thruster Type";
-        thrusterValue.value = thruster->getType();
+        thrusterValue.value = thruster.getType();
         statusmsg.values.push_back(thrusterValue);
 
         thrusterValue.key = thrusterName + " Alive";
-        thrusterValue.value = BoolToString(thruster->isAlive());
+        thrusterValue.value = BoolToString(thruster.isAlive());
         statusmsg.values.push_back(thrusterValue);
 
         thrusterValue.key = thrusterName + " Voltage";
-        thrusterValue.value = std::to_string(thruster->getVoltage());
+        thrusterValue.value = std::to_string(thruster.getVoltage());
         statusmsg.values.push_back(thrusterValue);
 
         thrusterValue.key = thrusterName + " Current";
-        thrusterValue.value = std::to_string(thruster->getCurrent());
+        thrusterValue.value = std::to_string(thruster.getCurrent());
         statusmsg.values.push_back(thrusterValue);
 
         thrusterValue.key = thrusterName + " Temperature";
-        thrusterValue.value = std::to_string(thruster->getTemperature());
+        thrusterValue.value = std::to_string(thruster.getTemperature());
         statusmsg.values.push_back(thrusterValue);
     }
 
@@ -213,7 +198,6 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "thruster_driver");
     ThrusterManager tc;
     tc.init();
-    ROS_INFO("Thruster controller initialized, spinning");
     tc.spin();
     return 0;
 }
